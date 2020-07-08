@@ -8,7 +8,7 @@ static_resources:
     - filters:
       - name: envoy.filters.network.http_connection_manager
         typed_config:
-          "@type": type.googleapis.com/envoy.config.filter.network.http_connection_manager.v2.HttpConnectionManager
+          "@type": type.googleapis.com/envoy.extensions.filters.network.http_connection_manager.v3.HttpConnectionManager
           codec_type: auto
           stat_prefix: ingress_http
           route_config:
@@ -28,7 +28,20 @@ static_resources:
                   cluster: service2
           http_filters:
           - name: envoy.filters.http.router
-            typed_config: {}
+          local_reply_config:
+            mappers:
+            - filter:
+                status_code_filter:
+                  comparison:
+                    op: EQ
+                    value:
+                      default_value: 404
+                      runtime_key: key_b
+              status_code: 404
+              body:
+                # can be only "filename", "inline_bytes", or "inline_string".
+                # would be nice if we could fetch the page from a cluster
+                filename: /etc/errors/404.html
   clusters:
   - name: service1
     connect_timeout: 0.25s
